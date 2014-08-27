@@ -4,6 +4,7 @@ class Docx_reader {
 
     private $fileData = false;
     private $errors = array();
+    private $styles = array();
 
     public function __construct() {
         
@@ -13,6 +14,43 @@ class Docx_reader {
         if (file_exists($file)) {
             $zip = new ZipArchive();
             if ($zip->open($file) === true) {
+                //attempt to load styles:
+                if (($styleIndex = $zip->locateName('word/styles.xml')) !== false) {
+                    $stylesXml = $zip->getFromIndex($styleIndex);
+                    $xml = simplexml_load_string($stylesXml);
+                    $namespaces = $xml->getNamespaces(true);
+
+                    $children = $xml->children($namespaces['w']);
+
+                    foreach ($children->style as $s) {
+                        $attr = $s->attributes('w', true);
+                        if (isset($attr['styleId'])) {
+                            $tags = array();
+                            $attrs = array();
+                            foreach (get_object_vars($s->rPr) as $tag => $style) {
+                                $att = $style->attributes('w', true);
+                                switch ($tag) {
+                                    case "b":
+                                        $tags[] = 'strong';
+                                        break;
+                                    case "i":
+                                        $tags[] = 'em';
+                                        break;
+                                    case "color":
+                                        //echo (String) $att['val'];
+                                        $attrs[] = 'color:#' . $att['val'];
+                                        break;
+                                    case "sz":
+                                        $attrs[] = 'font-size:' . $att['val'] . 'px';
+                                        break;
+                                }
+                            }
+                            $styles[(String)$attr['styleId']] = array('tags' => $tags, 'attrs' => $attrs);
+                        }
+                    }
+                    $this->styles = $styles;
+                }
+
                 if (($index = $zip->locateName('word/document.xml')) !== false) {
                     // If found, read it to the string
                     $data = $zip->getFromIndex($index);
@@ -52,6 +90,19 @@ class Docx_reader {
 
             foreach ($children->body->p as $p) {
                 $style = '';
+                
+                $startTags = array();
+                $startAttrs = array();
+                
+                if($p->pPr->pStyle) {                    
+                    $objectAttrs = $p->pPr->pStyle->attributes('w',true);
+                    $objectStyle = (String) $objectAttrs['val'];
+                    if(isset($this->styles[$objectStyle])) {
+                        $startTags = $this->styles[$objectStyle]['tags'];
+                        $startAttrs = $this->styles[$objectStyle]['attrs'];
+                    }
+                }
+                
                 if ($p->pPr->spacing) {
                     $att = $p->pPr->spacing->attributes('w', true);
                     if (isset($att['before'])) {
@@ -68,10 +119,11 @@ class Docx_reader {
                     $li = true;
                     $html.='<li>';
                 }
+                
                 foreach ($p->r as $part) {
                     //echo $part->t;
-                    $tags = array();
-                    $attrs = array();
+                    $tags = $startTags;
+                    $attrs = $startAttrs;                                        
 
                     foreach (get_object_vars($part->pPr) as $k => $v) {
                         if ($k = 'numPr') {
@@ -112,6 +164,7 @@ class Docx_reader {
                 $html.="</span>";
             }
 
+            //Trying to weed out non-utf8 stuff from the file:
             $regex = <<<'END'
 /
   (
@@ -125,7 +178,7 @@ class Docx_reader {
 /x
 END;
             preg_replace($regex, '$1', $html);
-            
+
             return $html . '</body></html>';
             exit();
         }
@@ -133,6 +186,10 @@ END;
 
     public function get_errors() {
         return $this->errors;
+    }
+
+    private function getStyles() {
+        
     }
 
 }
