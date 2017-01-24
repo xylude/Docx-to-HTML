@@ -13,7 +13,8 @@ class Docx_reader {
     private function load($file) {
         if (file_exists($file)) {
             $zip = new ZipArchive();
-            if ($zip->open($file) === true) {
+            $openedZip = $zip->open($file);
+            if ($openedZip === true) {
                 //attempt to load styles:
                 if (($styleIndex = $zip->locateName('word/styles.xml')) !== false) {
                     $stylesXml = $zip->getFromIndex($styleIndex);
@@ -60,7 +61,32 @@ class Docx_reader {
                 }
                 $zip->close();
             } else {
-                $this->errors[] = 'Could not open file.';
+                switch($openedZip) {
+                    case ZipArchive::ER_EXISTS:
+                        $this->errors[] = 'File exists.';
+                        break;
+                    case ZipArchive::ER_INCONS:
+                        $this->errors[] = 'Inconsistent zip file.';
+                        break;
+                    case ZipArchive::ER_MEMORY:
+                        $this->errors[] = 'Malloc failure.';
+                        break;
+                    case ZipArchive::ER_NOENT:
+                        $this->errors[] = 'No such file.';
+                        break;
+                    case ZipArchive::ER_NOZIP:
+                        $this->errors[] = 'File is not a zip archive.';
+                        break;
+                    case ZipArchive::ER_OPEN:
+                        $this->errors[] = 'Could not open file.';
+                        break;
+                    case ZipArchive::ER_READ:
+                        $this->errors[] = 'Read error.';
+                        break;
+                    case ZipArchive::ER_SEEK:
+                        $this->errors[] = 'Seek error.';
+                        break;
+                }
             }
         } else {
             $this->errors[] = 'File does not exist.';

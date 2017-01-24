@@ -15,10 +15,19 @@ This class requires the following:
 ###How to use
 
 ```
-$doc = new Docx_reader();
-$doc->setFile('/path/to/docx/file.docx');
+include('./docx_reader.php');
 
-$html = $doc->to_html();
-$plain_text = $doc->to_plain_text();
+$doc = new Docx_reader();
+$doc->setFile('./sample.docx');
+
+if(!$doc->get_errors()) {
+    $html = $doc->to_html();
+    $plain_text = $doc->to_plain_text();
+
+    echo $html;
+} else {
+    echo implode(', ',$doc->get_errors());
+}
+echo "\n";
 
 ```
