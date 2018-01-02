@@ -1,6 +1,10 @@
 Docx-to-HTML
 ============
 
+# This project is no longer being maintained:
+
+I don't really write much PHP anymore and haven't had time to keep up with this project. If someone is interested in taking this over and making it better, feel free to make a fork and let me know and I'll link your fork in this readme as the main version of it.
+
 Converts .docx files to HTML
 
 This is a PHP class that will convert your .docx files to HTML. It is by far not perfect, but will handle most things decently.
@@ -12,7 +16,7 @@ This class requires the following:
 
 
 
-###How to use
+### How to use
 
 ```
 include('./docx_reader.php');
