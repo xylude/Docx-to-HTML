@@ -1,9 +1,9 @@
-Docx-to-HTML
-============
-
 # This project is no longer being maintained:
 
 I don't really write much PHP anymore and haven't had time to keep up with this project. If someone is interested in taking this over and making it better, feel free to make a fork and let me know and I'll link your fork in this readme as the main version of it.
+
+Docx-to-HTML
+============
 
 Converts .docx files to HTML
 
